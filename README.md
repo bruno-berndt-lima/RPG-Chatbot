@@ -1,6 +1,6 @@
 # RPG Chatbot - D&D 5e Expert
 
-A Next.js-powered chatbot that serves as your ultimate guide for Dungeons & Dragons 5th Edition (D&D 5e). This application combines the power of local Large Language Models (via Ollama) with Retrieval Augmented Generation (RAG) using a vector database to provide accurate, contextual answers about D&D rules, spells, monsters, classes, and more.
+A Next.js-powered chatbot that serves as a ultimate guide for Dungeons & Dragons 5th Edition (D&D 5e). This application combines the power of local Large Language Models (via Ollama) with Retrieval Augmented Generation (RAG) using a vector database to provide accurate, contextual answers about D&D rules, spells, monsters, classes, and more.
 
 ## 🎯 Features
 
