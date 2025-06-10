@@ -190,10 +190,6 @@ const rpgData: DataSource[] = [
    - Reduce `CONCURRENCY_LIMIT` in `loadDB.ts`
    - Process data sources individually if needed
 
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ## 🙏 Acknowledgments
 
 - **Wizards of the Coast** for D&D 5e content
