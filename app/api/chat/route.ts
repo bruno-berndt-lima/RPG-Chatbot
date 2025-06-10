@@ -13,10 +13,12 @@ const db = client.db(ASTRA_DB_API_ENDPOINT, {namespace: ASTRA_DB_NAMESPACE});
 
 export async function POST(req: Request) {
     try {
+        console.log("Starting chat request processing");
         const { messages } = await req.json();
         const lastMessage = messages[messages?.length - 1]?.content;
         let docContext = "";
 
+        console.log("Getting embeddings from Ollama");
         // Get embedding from Ollama
         const embeddingResponse = await fetch(`${OLLAMA_API_BASE_URL}/api/embeddings`, {
             method: 'POST',
@@ -29,9 +31,15 @@ export async function POST(req: Request) {
             }),
         });
 
+        if (!embeddingResponse.ok) {
+            throw new Error(`Embedding request failed: ${embeddingResponse.statusText}`);
+        }
+
         const embeddingData = await embeddingResponse.json();
+        console.log("Successfully got embeddings");
 
         try {
+            console.log("Querying Astra DB");
             const collection = await db.collection(ASTRA_DB_COLLECTION);
             const cursor = collection.find(null, {
                 sort: {
@@ -43,36 +51,35 @@ export async function POST(req: Request) {
             const documents = await cursor.toArray();
             const docsMap = documents?.map(doc => doc.text);
             docContext = JSON.stringify(docsMap);
+            console.log("Successfully queried Astra DB");
 
         }  catch (error) {
             console.error("Error querying database", error);
-            docContext= "";
+            docContext = "";
         }
 
         const template = {
             role: "system",
-            content: `You are a master-level RPG assistant and rules expert, trained in all aspects of tabletop role-playing games,
-            especially Dungeons & Dragons 5th Edition. You know every rule, class, spell, monster, item, and mechanic from 
-            the Player's Handbook, Dungeon Master's Guide, Monster Manual, and SRD. You also understand advanced concepts like 
-            homebrew design, worldbuilding, dungeon mastering, encounter balancing, and player dynamics.
+            content: `You are a master-level assistant and rules expert for Dungeons & Dragons 5th Edition (D&D 5e). 
+            You know every rule, class, spell, monster, item, feat, and mechanic from official 5e sources, including the 
+            Player's Handbook (PHB), Dungeon Master's Guide (DMG), Monster Manual (MM), Xanathar's Guide to Everything (XGtE), 
+            Tasha's Cauldron of Everything (TCoE), and the 5e SRD.
 
-            Your job is to answer clearly, accurately, and helpfully. Use examples where helpful. Always prioritize the official 
-            rules (RAW), but you may also explain common house rules (RAI) and homebrew ideas when asked. When relevant, explain 
-            rule interactions, edge cases, and best practices for both players and Dungeon Masters.
+            Your job is to provide accurate, clear, and helpful answers about D&D 5e rules and gameplay. You can assist with 
+            character creation, spellcasting, combat mechanics, magic items, class features, abilities, crafting, and more. 
+            You also understand common edge cases, rule interactions, and Dungeon Master best practices like encounter building 
+            and world design.
 
-            You can summarize large rule sections, create custom content, or walk users through character creation, spell casting, 
-            item crafting, or narrative development. If a user asks a lore question, provide clear, canon-consistent information 
-            based on official settings like the Forgotten Realms.
+            Prioritize the official rules as written (RAW). When appropriate, explain rules as intended (RAI), common house rules, 
+            or homebrew options — but always distinguish clearly between them.
 
-            Speak in a helpful, conversational tone. Avoid vague answers—use precise rule references, class levels, ability names, 
-            or conditions. If a question is ambiguous, ask clarifying questions before proceeding.
+            Speak in a friendly, knowledgeable tone. Use specific examples, list class levels or spell slots when needed, and 
+            format your answers in markdown. If a question is unclear, ask for clarification before answering.
 
-            The conext will provide you with the most recent page from api.open5e.com, wikipedia, and basic rules pdf.
+            You may receive recent content from official APIs or summaries from PDFs and encyclopedias. If not, respond using your 
+            knowledge without mentioning what is or isn't in the context.
 
-            If the context doesn't include the information you need, answer based on your existing knowledge and don't mention the
-            source of your information or what the context does or doesn't include.
-            
-            Format responses using markdown where applicable and don't return images.
+            Never generate images. Stick to textual guidance.
             
             ----------------------------
             START CONTEXT
@@ -84,59 +91,65 @@ export async function POST(req: Request) {
             `
         };
 
-        // Create a new ReadableStream for streaming the response
-        const stream = new ReadableStream({
-            async start(controller) {
-                try {
-                    const response = await fetch(`${OLLAMA_API_BASE_URL}/api/chat`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            model: "llama2",
-                            messages: [template, ...messages],
-                            stream: true,
-                        }),
-                    });
-
-                    const reader = response.body?.getReader();
-                    if (!reader) {
-                        throw new Error('No reader available');
-                    }
-
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
-                        
-                        const chunk = new TextDecoder().decode(value);
-                        const lines = chunk.split('\n').filter(line => line.trim());
-                        
-                        for (const line of lines) {
-                            try {
-                                const data = JSON.parse(line);
-                                if (data.message?.content) {
-                                    controller.enqueue(new TextEncoder().encode(data.message.content));
-                                }
-                            } catch (e) {
-                                console.error('Error parsing chunk:', e);
-                            }
-                        }
-                    }
-                    controller.close();
-                } catch (error) {
-                    controller.error(error);
-                }
+        console.log("Starting chat stream");
+        
+        // Get the complete response from Ollama first
+        console.log("Sending chat request to Ollama");
+        const response = await fetch(`${OLLAMA_API_BASE_URL}/api/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
             },
+            body: JSON.stringify({
+                model: "llama2",
+                messages: [template, ...messages],
+                stream: false, // Get complete response
+            }),
         });
 
-        return new Response(stream, {
-            headers: {
-                'Content-Type': 'text/plain; charset=utf-8',
-            },
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Chat request failed:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: errorText
+            });
+            throw new Error(`Chat request failed: ${response.statusText} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        const content = data.message?.content || "";
+        
+        console.log("Chat request successful, got response:", content);
+        
+        // Return the response in the exact format expected by the new page.tsx
+        return Response.json({
+            id: crypto.randomUUID(),
+            object: 'chat.completion',
+            created: Math.floor(Date.now() / 1000),
+            model: 'llama2',
+            choices: [{
+                index: 0,
+                message: {
+                    role: 'assistant',
+                    content: content,
+                },
+                finish_reason: 'stop'
+            }],
+            usage: {
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                total_tokens: 0
+            }
         });
 
     } catch (error) {
-        throw error;
+        console.error('Request error:', error);
+        return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
     }
 }
