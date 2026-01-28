@@ -106,7 +106,7 @@ This script will:
 3. **Start chatting!**
    Ask questions about D&D 5e rules, spells, monsters, or anything RPG-related.
 
-## 💬 Usage Examples
+## Usage Examples
 
 Try asking questions like:
 - "How does the Fireball spell work?"
@@ -134,7 +134,7 @@ RPG-Chatbot/
 └── README.md
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Ollama Models
 - **LLM Model**: `llama2` (default) - Can be changed in `/api/chat/route.ts`
@@ -157,7 +157,7 @@ The application pulls data from:
 ### POST `/api/chat`
 Main chat endpoint that processes user messages.
 
-## 🛠 Development
+## Development
 
 ### Adding New Data Sources
 To add new data sources, modify the `rpgData` array in `scripts/loadDB.ts`:
