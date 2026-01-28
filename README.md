@@ -2,7 +2,7 @@
 
 A Next.js-powered chatbot that serves as a ultimate guide for Dungeons & Dragons 5th Edition (D&D 5e). This application combines the power of local Large Language Models (via Ollama) with Retrieval Augmented Generation (RAG) using a vector database to provide accurate, contextual answers about D&D rules, spells, monsters, classes, and more.
 
-## 🎯 Features
+## Features
 
 - **Comprehensive D&D 5e Knowledge**: Access to rules, spells, monsters, classes, races, backgrounds, feats, conditions, magic items, weapons, and armor
 - **Intelligent Context Search**: Vector similarity search retrieves relevant information before generating responses
@@ -11,7 +11,7 @@ A Next.js-powered chatbot that serves as a ultimate guide for Dungeons & Dragons
 - **Modern Chat Interface**: Clean, responsive UI with prompt suggestions and real-time messaging
 - **RAG Architecture**: Combines retrieval with generation for accurate, context-aware responses
 
-## 🏗 Architecture
+## Architecture
 
 ### Tech Stack
 - **Frontend**: Next.js 14, React, TypeScript
@@ -28,7 +28,7 @@ A Next.js-powered chatbot that serves as a ultimate guide for Dungeons & Dragons
 5. **Context Retrieval**: Relevant documents are retrieved as context
 6. **Response Generation**: Ollama's llama2 model generates responses using the retrieved context
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -115,7 +115,7 @@ Try asking questions like:
 - "What classes can cast healing spells?"
 - "How do I calculate armor class?"
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 RPG-Chatbot/
@@ -152,7 +152,7 @@ The application pulls data from:
 - **Wikipedia**: General D&D lore and adventure information
 - **D&D Basic Rules PDF**: Official Wizards of the Coast content
 
-## 🔍 API Endpoints
+## API Endpoints
 
 ### POST `/api/chat`
 Main chat endpoint that processes user messages.
@@ -170,7 +170,7 @@ const rpgData: DataSource[] = [
 ];
 ```
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -190,7 +190,7 @@ const rpgData: DataSource[] = [
    - Reduce `CONCURRENCY_LIMIT` in `loadDB.ts`
    - Process data sources individually if needed
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Wizards of the Coast** for D&D 5e content
 - **Open5e** for providing the comprehensive API
